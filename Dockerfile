@@ -15,6 +15,6 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo build --release
 
-FROM rust:1.74-slim AS template-rust
+FROM rust:1.74.0-slim AS final
 COPY --from=builder /app/target/release/quotes /usr/local/bin
 ENTRYPOINT ["/usr/local/bin/quotes"]

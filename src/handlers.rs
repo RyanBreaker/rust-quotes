@@ -1,12 +1,13 @@
-use axum::extract::State;
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct Quote {
-    id: uuid::Uuid,
+    id: Uuid,
     book: String,
     quote: String,
     inserted_at: chrono::DateTime<chrono::Utc>,
@@ -17,7 +18,7 @@ impl Quote {
     fn new(book: String, quote: String) -> Self {
         let now = chrono::Utc::now();
         Self {
-            id: uuid::Uuid::new_v4(),
+            id: Uuid::new_v4(),
             book,
             quote,
             inserted_at: now,
@@ -69,5 +70,35 @@ pub async fn read_quotes(State(pool): State<PgPool>) -> Result<Json<Vec<Quote>>,
     match res {
         Ok(quotes) => Ok(Json(quotes)),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+pub async fn update_quotes(
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<CreateQuote>,
+) -> StatusCode {
+    let now = chrono::Utc::now();
+    let res = sqlx::query(
+        r#"
+        UPDATE quotes
+        SET book = $1, quote = $2, updated_at = $3
+        WHERE id = $4
+        "#,
+    )
+    .bind(payload.book)
+    .bind(payload.quote)
+    .bind(now)
+    .bind(id)
+    .execute(&pool)
+    .await
+    .map(|res| match res.rows_affected() {
+        0 => StatusCode::NOT_FOUND,
+        _ => StatusCode::OK,
+    });
+
+    match res {
+        Ok(status) => status,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
     }
 }
