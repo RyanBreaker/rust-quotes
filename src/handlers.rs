@@ -2,9 +2,9 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{FromRow, PgPool};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, FromRow)]
 pub struct Quote {
     id: uuid::Uuid,
     book: String,
@@ -57,6 +57,17 @@ pub async fn create_quote(
 
     match res {
         Ok(_) => Ok((StatusCode::CREATED, Json(quote))),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+pub async fn read_quotes(State(pool): State<PgPool>) -> Result<Json<Vec<Quote>>, StatusCode> {
+    let res = sqlx::query_as::<_, Quote>("SELECT * FROM quotes")
+        .fetch_all(&pool)
+        .await;
+
+    match res {
+        Ok(quotes) => Ok(Json(quotes)),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
