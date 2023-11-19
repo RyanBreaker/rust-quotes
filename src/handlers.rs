@@ -73,7 +73,7 @@ pub async fn read_quotes(State(pool): State<PgPool>) -> Result<Json<Vec<Quote>>,
     }
 }
 
-pub async fn update_quotes(
+pub async fn update_quote(
     State(pool): State<PgPool>,
     Path(id): Path<Uuid>,
     Json(payload): Json<CreateQuote>,
@@ -96,6 +96,22 @@ pub async fn update_quotes(
         0 => StatusCode::NOT_FOUND,
         _ => StatusCode::OK,
     });
+
+    match res {
+        Ok(status) => status,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
+}
+
+pub async fn delete_quote(State(pool): State<PgPool>, Path(id): Path<Uuid>) -> StatusCode {
+    let res = sqlx::query("DELETE FROM quotes WHERE id=$1")
+        .bind(id)
+        .execute(&pool)
+        .await
+        .map(|res| match res.rows_affected() {
+            0 => StatusCode::NOT_FOUND,
+            _ => StatusCode::OK,
+        });
 
     match res {
         Ok(status) => status,
