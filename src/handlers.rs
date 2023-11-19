@@ -1,6 +1,6 @@
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum::{http, Json};
+use axum::Json;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
@@ -32,8 +32,8 @@ pub struct CreateQuote {
     quote: String,
 }
 
-pub async fn health() -> http::StatusCode {
-    http::StatusCode::OK
+pub async fn health() -> StatusCode {
+    StatusCode::OK
 }
 
 pub async fn create_quote(
@@ -47,11 +47,11 @@ pub async fn create_quote(
         VALUES ($1, $2, $3, $4, $5)
         "#,
     )
-    .bind(&quote.id)
+    .bind(quote.id)
     .bind(&quote.book)
     .bind(&quote.quote)
-    .bind(&quote.inserted_at)
-    .bind(&quote.updated_at)
+    .bind(quote.inserted_at)
+    .bind(quote.updated_at)
     .execute(&pool)
     .await;
 
