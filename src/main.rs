@@ -6,6 +6,10 @@ use sqlx::postgres::PgPoolOptions;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
+
     let port = std::env::var("PORT").unwrap_or("3000".to_string());
     let addr = format!("0.0.0.0:{port}");
 
