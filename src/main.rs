@@ -15,6 +15,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(&db_url)
         .await?;
 
+    sqlx::migrate!("./migrations").run(&pool).await?;
+
     let app = Router::new()
         .route("/", get(handlers::health))
         .route("/quotes", post(handlers::create_quote))

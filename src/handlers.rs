@@ -42,17 +42,17 @@ pub async fn create_quote(
     Json(payload): Json<CreateQuote>,
 ) -> Result<(StatusCode, Json<Quote>), StatusCode> {
     let quote = Quote::new(payload.book, payload.quote);
-    let res = sqlx::query(
+    let res = sqlx::query!(
         r#"
         INSERT INTO quotes (id, book, quote, inserted_at, updated_at)
         VALUES ($1, $2, $3, $4, $5)
         "#,
+        quote.id,
+        quote.book,
+        quote.quote,
+        quote.inserted_at,
+        quote.updated_at
     )
-    .bind(quote.id)
-    .bind(&quote.book)
-    .bind(&quote.quote)
-    .bind(quote.inserted_at)
-    .bind(quote.updated_at)
     .execute(&pool)
     .await;
 
@@ -63,7 +63,7 @@ pub async fn create_quote(
 }
 
 pub async fn read_quotes(State(pool): State<PgPool>) -> Result<Json<Vec<Quote>>, StatusCode> {
-    let res = sqlx::query_as::<_, Quote>("SELECT * FROM quotes")
+    let res = sqlx::query_as!(Quote, "SELECT * FROM quotes")
         .fetch_all(&pool)
         .await;
 
@@ -79,17 +79,17 @@ pub async fn update_quote(
     Json(payload): Json<CreateQuote>,
 ) -> StatusCode {
     let now = chrono::Utc::now();
-    let res = sqlx::query(
+    let res = sqlx::query!(
         r#"
         UPDATE quotes
         SET book = $1, quote = $2, updated_at = $3
         WHERE id = $4
         "#,
+        payload.book,
+        payload.quote,
+        now,
+        id
     )
-    .bind(payload.book)
-    .bind(payload.quote)
-    .bind(now)
-    .bind(id)
     .execute(&pool)
     .await
     .map(|res| match res.rows_affected() {
@@ -104,8 +104,7 @@ pub async fn update_quote(
 }
 
 pub async fn delete_quote(State(pool): State<PgPool>, Path(id): Path<Uuid>) -> StatusCode {
-    let res = sqlx::query("DELETE FROM quotes WHERE id=$1")
-        .bind(id)
+    let res = sqlx::query!("DELETE FROM quotes WHERE id=$1", id)
         .execute(&pool)
         .await
         .map(|res| match res.rows_affected() {
